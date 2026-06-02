@@ -2,7 +2,6 @@
 Manager class for handling apartment management operations.
 """
 
-from typing import List
 from datetime import datetime
 
 from src.models import (
@@ -54,15 +53,14 @@ class Manager:
 
     def generate_apartment_events_report(
         self, apartment_key: str, only_unsolved: bool = True
-    ) -> List[ApartmentEvent]:
+    ) -> list[ApartmentEvent]:
         """Generate a report of apartment events for a given apartment key."""
         if apartment_key not in self.apartments:
             raise ValueError("Apartment key does not exist")
         return [
             event
             for event in self.apartment_events
-            if event.apartment == apartment_key
-            and (not event.solved or not only_unsolved)
+            if event.apartment == apartment_key and (not event.solved or not only_unsolved)
         ]
 
     def check_tenants_apartment_keys(self) -> bool:
@@ -116,7 +114,7 @@ class Manager:
 
     def create_tenants_settlements(
         self, apartment_settlement: ApartmentSettlement
-    ) -> List[TenantSettlement] | None:
+    ) -> list[TenantSettlement] | None:
         """Create tenant settlements based on the apartment settlement."""
         if apartment_settlement.month < 1 or apartment_settlement.month > 12:
             raise ValueError("Month must be between 1 and 12")
@@ -136,13 +134,12 @@ class Manager:
                 apartment_settlement=apartment_settlement.key,
                 month=apartment_settlement.month,
                 year=apartment_settlement.year,
-                total_due_pln=apartment_settlement.total_due_pln
-                / len(tenants_in_apartment),
+                total_due_pln=apartment_settlement.total_due_pln / len(tenants_in_apartment),
             )
             for tenant in tenants_in_apartment
         ]
 
-    def get_debtors(self, apartment_key: str, year: int, month: int) -> List[str]:
+    def get_debtors(self, apartment_key: str, year: int, month: int) -> list[str]:
         """Get a list of tenant names (debtors) for a given apartment key, year, and month."""
         if month < 1 or month > 12:
             raise ValueError("Month must be between 1 and 12")
@@ -161,8 +158,7 @@ class Manager:
             total_paid = sum(
                 transfer.amount_pln
                 for transfer in tenant_transfers
-                if transfer.settlement_year == year
-                and transfer.settlement_month == month
+                if transfer.settlement_year == year and transfer.settlement_month == month
             )
             if total_paid < tenant_settlement.total_due_pln:
                 output.append(tenant_settlement.tenant)
@@ -185,8 +181,7 @@ class Manager:
             total_deposits += sum(
                 transfer.amount_pln
                 for transfer in self.transfers
-                if self.tenants[transfer.tenant].name == tenant.name
-                and transfer.type == "deposit"
+                if self.tenants[transfer.tenant].name == tenant.name and transfer.type == "deposit"
             )
             total_due += tenant.deposit_pln
 
@@ -195,13 +190,9 @@ class Manager:
     def get_annual_balance(self, year: int) -> float:
         """Calculate the annual balance for a given year based on transfers and bills."""
         total_income = sum(
-            transfer.amount_pln
-            for transfer in self.transfers
-            if transfer.settlement_year == year
+            transfer.amount_pln for transfer in self.transfers if transfer.settlement_year == year
         )
-        total_due = sum(
-            bill.amount_pln for bill in self.bills if bill.settlement_year == year
-        )
+        total_due = sum(bill.amount_pln for bill in self.bills if bill.settlement_year == year)
         return total_income - total_due
 
     def has_any_bills(self, apartment_key: str, year: int, month: int) -> bool:
@@ -230,19 +221,14 @@ class Manager:
 
     def check_tenant_blacklist(self, tenant_name: str) -> bool:
         """Check if a tenant is in the blacklist."""
-        return any(
-            entry for entry in self.tenants_blacklist if entry.tenant == tenant_name
-        )
+        return any(entry for entry in self.tenants_blacklist if entry.tenant == tenant_name)
 
     def check_transfers_tenant(self) -> bool:
         """Check if all transfers are associated with valid tenants and their agreement dates."""
         for transfer in self.transfers:
             if transfer.tenant not in self.tenants:
                 return False
-            if (
-                transfer.settlement_year is not None
-                and transfer.settlement_month is not None
-            ):
+            if transfer.settlement_year is not None and transfer.settlement_month is not None:
                 agreement_from = self.tenants[transfer.tenant].date_agreement_from
                 agreement_from = datetime.strptime(agreement_from, "%Y-%m-%d").date()
                 agreement_to = self.tenants[transfer.tenant].date_agreement_to
