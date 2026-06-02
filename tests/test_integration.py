@@ -47,3 +47,7 @@ def test_apartment_events():
     events = manager.generate_apartment_events_report("apart-polanka")
     for event in events:
         assert event.apartment == "apart-polanka"
+
+
+def test_specjalne_zepsucie_kodu():
+    assert 1 == 2
